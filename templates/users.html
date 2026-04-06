@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<div class="page-header"><div><h1>Usuarios</h1><p>Gestión básica de accesos por sede y rol.</p></div></div>
+<div class="grid-two">
+  <section class="panel">
+    <div class="panel-title">Nuevo usuario</div>
+    <form method="post" class="form-grid">
+      <label>Nombre completo<input type="text" name="nombre" required></label>
+      <label>Usuario<input type="text" name="username" required></label>
+      <label>Contraseña<input type="password" name="password" required></label>
+      <label>Rol
+        <select name="role" required>
+          {% for role in role_options %}<option value="{{ role }}">{{ role|capitalize }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="full">Sede<input type="text" name="sede" required></label>
+      <div class="actions"><button class="btn btn-primary" type="submit">Crear usuario</button></div>
+    </form>
+  </section>
+  <section class="panel">
+    <div class="panel-title">Usuarios registrados</div>
+    <div class="table-card compact-table">
+      <table>
+        <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Sede</th></tr></thead>
+        <tbody>
+          {% for user in users %}
+          <tr><td>{{ user.nombre }}</td><td>{{ user.username }}</td><td>{{ user.role }}</td><td>{{ user.sede }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}
