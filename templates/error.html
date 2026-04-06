@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="panel narrow-panel center-panel">
+  <h1>{{ title }}</h1>
+  <p>{{ message }}</p>
+  <a class="btn btn-primary" href="{{ url_for('dashboard') if current_user else url_for('login') }}">Volver</a>
+</div>
+{% endblock %}
