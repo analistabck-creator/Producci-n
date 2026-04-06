@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Ingreso{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-hero">
+      <h1>Ingreso al sistema</h1>
+      <p>Control de producción responsive para teléfono y PC, con firmas, evidencias, flujo y exportación.</p>
+      <div class="demo-box">
+        <strong>Usuarios demo</strong>
+        <span>admin / admin123</span>
+        <span>supervisor / super123</span>
+        <span>tecnico / tec123</span>
+        <span>almacen / alm123</span>
+      </div>
+    </div>
+    <form method="post" class="panel form-compact">
+      <label>Usuario
+        <input type="text" name="username" required>
+      </label>
+      <label>Contraseña
+        <input type="password" name="password" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Ingresar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
