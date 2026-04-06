@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Nuevo registro' if mode == 'create' else 'Editar registro' }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ 'Nuevo registro' if mode == 'create' else 'Editar registro #' ~ record.id }}</h1>
+    <p>Formulario completo, responsive, con evidencias y firmas digitales.</p>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="stack-form">
+  <section class="panel">
+    <div class="panel-title">Datos del formato</div>
+    <div class="form-grid">
+      {% for field in fields %}
+      <label class="{% if field.full %}full{% endif %}">{{ field.label }} {% if field.required %}<span class="required">*</span>{% endif %}
+        {% if field.type == 'textarea' %}
+        <textarea name="{{ field.name }}">{{ values.get(field.name, '') }}</textarea>
+        {% elif field.type == 'select' %}
+        <select name="{{ field.name }}" {% if field.required %}required{% endif %}>
+          <option value="">Selecciona</option>
+          {% for option in field.options %}
+          <option value="{{ option }}" {% if values.get(field.name, '') == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+        {% else %}
+        <input type="{{ field.type }}" name="{{ field.name }}" value="{{ values.get(field.name, '') }}" {% if field.required %}required{% endif %} step="{{ field.step if field.step else '' }}" min="{{ field.min if field.min else '' }}">
+        {% endif %}
+      </label>
+      {% endfor %}
+      <label>Flujo de trabajo
+        <select name="workflow_status">
+          {% for option in workflow_options %}
+          <option value="{{ option }}" {% if values.get('workflow_status', 'Borrador') == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">Evidencias por cámara o archivo</div>
+    <div class="form-grid">
+      {% for media in media_fields %}
+      <label class="full">{{ media.label }}
+        <input type="file" name="{{ media.name }}" accept="{{ media.accept }}" {% if media.multiple %}multiple{% endif %} {% if media.capture %}capture="environment"{% endif %}>
+        <small class="muted">Desde el teléfono puedes abrir la cámara directamente.</small>
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">Firmas digitales</div>
+    <div class="signature-grid">
+      <div class="signature-card">
+        <div class="signature-header">
+          <strong>Firma del técnico</strong>
+          <button class="btn btn-sm btn-outline" type="button" onclick="clearSignature('sig_tecnico')">Limpiar</button>
+        </div>
+        <canvas id="sig_tecnico" class="signature-canvas"></canvas>
+        <input type="hidden" name="signature_tecnico" id="signature_tecnico">
+      </div>
+      <div class="signature-card">
+        <div class="signature-header">
+          <strong>Firma del almacenero</strong>
+          <button class="btn btn-sm btn-outline" type="button" onclick="clearSignature('sig_almacenero')">Limpiar</button>
+        </div>
+        <canvas id="sig_almacenero" class="signature-canvas"></canvas>
+        <input type="hidden" name="signature_almacenero" id="signature_almacenero">
+      </div>
+    </div>
+  </section>
+
+  <div class="actions sticky-actions">
+    <a class="btn btn-outline" href="{{ url_for('records_history') }}">Cancelar</a>
+    <button class="btn btn-primary" type="submit">{{ 'Guardar registro' if mode == 'create' else 'Guardar cambios' }}</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setupSignature(canvasId, inputId) {
+  const canvas = document.getElementById(canvasId);
+  const input = document.getElementById(inputId);
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+
+  function resizeCanvas() {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    const width = canvas.clientWidth || 420;
+    const height = 180;
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#123b66';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const point = e.touches ? e.touches[0] : e;
+    return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+  }
+
+  function start(e) {
+    drawing = true;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    e.preventDefault();
+  }
+
+  function move(e) {
+    if (!drawing) return;
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    e.preventDefault();
+  }
+
+  function end() {
+    if (!drawing) return;
+    drawing = false;
+    input.value = canvas.toDataURL('image/png');
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, {passive:false});
+  canvas.addEventListener('touchmove', move, {passive:false});
+  canvas.addEventListener('touchend', end);
+}
+
+function clearSignature(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (canvasId === 'sig_tecnico') document.getElementById('signature_tecnico').value = '';
+  if (canvasId === 'sig_almacenero') document.getElementById('signature_almacenero').value = '';
+}
+
+setupSignature('sig_tecnico', 'signature_tecnico');
+setupSignature('sig_almacenero', 'signature_almacenero');
+</script>
+{% endblock %}
