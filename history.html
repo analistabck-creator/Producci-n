@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Historial{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Historial de producción</h1>
+    <p>Consulta, filtra y entra al detalle de cada equipo registrado.</p>
+  </div>
+</div>
+
+<form method="get" class="panel filters-grid">
+  <label>Búsqueda
+    <input type="text" name="q" value="{{ filters.q }}" placeholder="Cuenta, serie, modelo, reporte">
+  </label>
+  <label>Flujo
+    <select name="workflow">
+      <option value="">Todos</option>
+      {% for option in workflow_options %}
+      <option value="{{ option }}" {% if filters.workflow == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Sede / almacén
+    <input type="text" name="almacen" value="{{ filters.almacen }}">
+  </label>
+  <div class="filters-actions">
+    <button class="btn btn-primary" type="submit">Filtrar</button>
+    <a class="btn btn-outline" href="{{ url_for('records_history') }}">Limpiar</a>
+  </div>
+</form>
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Almacén</th>
+        <th>Cuenta</th>
+        <th>Equipo</th>
+        <th>Flujo</th>
+        <th>Evidencias</th>
+        <th>Actualizado</th>
+        <th>Drive</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in records %}
+      <tr>
+        <td>#{{ record.id }}</td>
+        <td>{{ record.almacen }}</td>
+        <td>{{ record.cuenta }}</td>
+        <td>{{ record.marca or '-' }} {{ record.modelo or '-' }}<br><small>{{ record.serie or '-' }}</small></td>
+        <td><span class="badge badge-{{ record.status_badge }}">{{ record.workflow_status }}</span></td>
+        <td>{{ record.media_count }}</td>
+        <td>{{ record.updated_at_human }}</td>
+        <td><span class="badge badge-{{ record.sync_badge }}">{{ record.drive_sync_status or "pendiente" }}</span></td>
+        <td><a class="btn btn-sm btn-outline" href="{{ url_for('record_detail', record_id=record.id) }}">Abrir</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" class="muted center">No hay resultados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Sistema de Producción{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    {% if current_user %}
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-badge">SP</div>
+        <div>
+          <strong>Sistema Producción</strong>
+          <small>{{ current_user.sede }} · {{ current_user.role|capitalize }}</small>
+        </div>
+      </div>
+      <nav>
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('record_create') }}">Nuevo registro</a>
+        <a href="{{ url_for('records_history') }}">Historial</a>
+        <a href="{{ url_for('records_export') }}">Exportar Excel</a>
+        {% if current_user.role in ['administrador', 'supervisor'] %}
+        <a href="{{ url_for('drive_center') }}">Google Drive</a>
+        {% endif %}
+        {% if current_user.role == 'administrador' %}
+        <a href="{{ url_for('admin_users') }}">Usuarios</a>
+        {% endif %}
+      </nav>
+      <div class="sidebar-user">
+        <div>{{ current_user.nombre }}</div>
+        <small>@{{ current_user.username if current_user.username else '' }}</small>
+        <a class="btn btn-outline" href="{{ url_for('logout') }}">Cerrar sesión</a>
+      </div>
+    </aside>
+    {% endif %}
+
+    <main class="content {% if not current_user %}content-full{% endif %}">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

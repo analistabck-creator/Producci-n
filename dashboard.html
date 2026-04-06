@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Dashboard operacional</h1>
+    <p>Vista rápida del estado de producción, evidencias y avance por sede.</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{{ url_for('record_create') }}">Nuevo registro</a>
+    <a class="btn btn-outline" href="{{ url_for('records_export') }}">Exportar Excel</a>
+  </div>
+</div>
+
+<div class="metrics-grid">
+  <div class="metric-card"><span>Total registros</span><strong>{{ metrics.total }}</strong></div>
+  <div class="metric-card"><span>Aprobados</span><strong>{{ metrics.aprobados }}</strong></div>
+  <div class="metric-card"><span>Observados</span><strong>{{ metrics.observados }}</strong></div>
+  <div class="metric-card"><span>Cerrados</span><strong>{{ metrics.cerrados }}</strong></div>
+  <div class="metric-card"><span>Con evidencias</span><strong>{{ metrics.con_evidencias }}</strong></div>
+  <div class="metric-card"><span>Drive OK</span><strong>{{ metrics.drive_ok }}</strong></div>
+  <div class="metric-card"><span>Drive error</span><strong>{{ metrics.drive_error }}</strong></div>
+</div>
+
+<div class="grid-two">
+  <section class="panel">
+    <div class="panel-title">Flujo de trabajo</div>
+    {% for name in workflow_options %}
+      <div class="progress-row"><span>{{ name }}</span><strong>{{ status_counts.get(name, 0) }}</strong></div>
+    {% endfor %}
+  </section>
+  <section class="panel">
+    <div class="panel-title">Producción por sede</div>
+    {% for sede, qty in sede_counts.most_common(8) %}
+      <div class="progress-row"><span>{{ sede }}</span><strong>{{ qty }}</strong></div>
+    {% else %}
+      <p class="muted">Sin datos todavía.</p>
+    {% endfor %}
+  </section>
+</div>
+
+<div class="grid-two">
+  <section class="panel">
+    <div class="panel-title">Técnicos / responsables más activos</div>
+    {% for tecnico, qty in top_tecnicos.most_common(8) %}
+      <div class="progress-row"><span>{{ tecnico }}</span><strong>{{ qty }}</strong></div>
+    {% else %}
+      <p class="muted">Sin datos todavía.</p>
+    {% endfor %}
+  </section>
+  <section class="panel">
+    <div class="panel-title">Últimos registros</div>
+    <div class="list-stack">
+      {% for record in recent %}
+        <a class="list-item" href="{{ url_for('record_detail', record_id=record.id) }}">
+          <div>
+            <strong>#{{ record.id }} · {{ record.almacen }}</strong>
+            <small>{{ record.modelo or '-' }} · {{ record.serie or '-' }}</small>
+          </div>
+          <span class="badge badge-{{ record.status_badge }}">{{ record.workflow_status }}</span>
+        </a>
+      {% else %}
+        <p class="muted">Aún no hay registros.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+<div class="grid-two">
+  <section class="panel">
+    <div class="panel-title">Actividad reciente de Drive</div>
+    <div class="timeline compact-timeline">
+      {% for item in drive_log %}
+        <div class="timeline-item">
+          <strong>{{ item.sync_scope }} · {{ item.status }}</strong>
+          <span>{{ item.message or '-' }}</span>
+          <time>{{ item.created_at }}</time>
+        </div>
+      {% else %}
+        <p class="muted">Sin eventos todavía.</p>
+      {% endfor %}
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-title">Estado del sistema</div>
+    <div class="progress-row"><span>Excel maestro</span><strong>Automático</strong></div>
+    <div class="progress-row"><span>PDF por registro</span><strong>Automático</strong></div>
+    <div class="progress-row"><span>Google Drive</span><strong>{{ 'Activo' if metrics.drive_ok or metrics.drive_error else 'Pendiente' }}</strong></div>
+  </section>
+</div>

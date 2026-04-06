@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: almacen-produccion
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /login
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
+      - key: APP_DATA_DIR
+        value: /var/data
+      - key: GOOGLE_DRIVE_SYNC_MODE
+        value: off
+      - key: GOOGLE_DRIVE_FILE_NAME
+        value: historial_produccion_maestro.xlsx
+    disks:
+      - name: almacen-produccion-data
+        mountPath: /var/data
+        sizeGB: 5
