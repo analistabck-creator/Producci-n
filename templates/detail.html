@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Registro #{{ record.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Registro #{{ record.id }}</h1>
+    <p>{{ record.almacen }} · {{ record.marca or '-' }} {{ record.modelo or '-' }} · {{ record.serie or '-' }}</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-outline" href="{{ url_for('record_pdf', record_id=record.id) }}">Descargar PDF</a>
+    {% if current_user.role in ['administrador', 'supervisor', 'almacenero'] %}
+    <form method="post" action="{{ url_for('record_sync_drive', record_id=record.id) }}">
+      <button class="btn btn-outline" type="submit">Sync Drive</button>
+    </form>
+    {% endif %}
+    <a class="btn btn-primary" href="{{ url_for('record_edit', record_id=record.id) }}">Editar</a>
+  </div>
+</div>
+
+<div class="grid-two">
+  <section class="panel">
+    <div class="panel-title">Resumen</div>
+    <div class="detail-list">
+      <div><span>Flujo</span><strong class="badge badge-{{ record.status_badge }}">{{ record.workflow_status }}</strong></div>
+      <div><span>Creado por</span><strong>{{ record.created_by_name }} · {{ record.created_by_role }}</strong></div>
+      <div><span>Sede usuario</span><strong>{{ record.created_by_sede }}</strong></div>
+      <div><span>Actualizado</span><strong>{{ record.updated_at_human }}</strong></div>
+      <div><span>Evidencias</span><strong>{{ record.media_count }}</strong></div>
+      <div><span>Drive</span><strong class="badge badge-{{ record.sync_badge }}">{{ record.drive_sync_status or 'pendiente' }}</strong></div>
+      <div><span>Último sync Drive</span><strong>{{ record.drive_last_sync_human }}</strong></div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-title">Cambiar flujo</div>
+    <form method="post" action="{{ url_for('record_workflow', record_id=record.id) }}" class="inline-form">
+      <select name="workflow_status">
+        {% for option in workflow_options %}
+        <option value="{{ option }}" {% if record.workflow_status == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit">Actualizar</button>
+    </form>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-title">Campos del formato</div>
+  <div class="detail-grid">
+    {% for field in fields %}
+      <div class="detail-card"><span>{{ field.label }}</span><strong>{{ record[field.name] or '-' }}</strong></div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-title">Firmas</div>
+  <div class="signature-preview-grid">
+    <div>
+      <h3>Firma técnico</h3>
+      {% if record.firma_tecnico_path %}
+      <img src="{{ url_for('uploaded_file', filename=record.firma_tecnico_path) }}" class="signature-preview" alt="Firma técnico">
+      {% else %}<p class="muted">Sin firma registrada.</p>{% endif %}
+    </div>
+    <div>
+      <h3>Firma almacenero</h3>
+      {% if record.firma_almacenero_path %}
+      <img src="{{ url_for('uploaded_file', filename=record.firma_almacenero_path) }}" class="signature-preview" alt="Firma almacenero">
+      {% else %}<p class="muted">Sin firma registrada.</p>{% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-title">Evidencias</div>
+  {% for media in media_fields %}
+    <div class="media-group">
+      <h3>{{ media.label }}</h3>
+      <div class="media-grid">
+        {% for item in media_map.get(media.name, []) %}
+          <div class="media-card">
+            {% if item.mime_type and item.mime_type.startswith('image') %}
+            <a href="{{ url_for('uploaded_file', filename=item.relative_path) }}" target="_blank">
+              <img src="{{ url_for('uploaded_file', filename=item.relative_path) }}" alt="{{ item.original_name }}">
+            </a>
+            {% elif item.mime_type and item.mime_type.startswith('video') %}
+            <video controls src="{{ url_for('uploaded_file', filename=item.relative_path) }}"></video>
+            {% else %}
+            <a href="{{ url_for('uploaded_file', filename=item.relative_path) }}" target="_blank">{{ item.original_name }}</a>
+            {% endif %}
+            <form method="post" action="{{ url_for('delete_media', record_id=record.id, media_id=item.id) }}">
+              <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+            </form>
+          </div>
+        {% else %}
+          <p class="muted">Sin archivos en este bloque.</p>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+</section>
+
+<section class="panel">
+  <div class="panel-title">Bitácora</div>
+  <div class="timeline">
+    {% for item in activity %}
+      <div class="timeline-item">
+        <strong>{{ item.action }}</strong>
+        <span>{{ item.actor_name }} · {{ item.actor_role }} · {{ item.actor_sede }}</span>
+        <small>{{ item.detail }}</small>
+        <time>{{ item.created_at }}</time>
+      </div>
+    {% else %}
+      <p class="muted">Sin movimientos.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+<section class="panel">
+  <div class="panel-title">Bitácora de Drive</div>
+  <div class="timeline compact-timeline">
+    {% for item in drive_log %}
+      <div class="timeline-item">
+        <strong>{{ item.sync_scope }} · {{ item.status }}</strong>
+        <span>{{ item.message or '-' }}</span>
+        <time>{{ item.created_at }}</time>
+      </div>
+    {% else %}
+      <p class="muted">Sin eventos de Drive.</p>
+    {% endfor %}
+  </div>
+</section>
