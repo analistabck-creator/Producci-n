@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Google Drive{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Centro de sincronización Google Drive</h1>
+    <p>Controla el envío automático del historial, PDF y evidencias hacia Drive.</p>
+  </div>
+  <div class="actions">
+    <form method="post" action="{{ url_for('drive_sync_all') }}">
+      <button class="btn btn-primary" type="submit">Sincronizar últimos registros</button>
+    </form>
+  </div>
+</div>
+
+<div class="metrics-grid">
+  <div class="metric-card"><span>Drive activo</span><strong>{{ 'Sí' if config_status.enabled else 'No' }}</strong></div>
+  <div class="metric-card"><span>Modo</span><strong>{{ config_status.mode }}</strong></div>
+  <div class="metric-card"><span>Archivo Excel</span><strong>{{ config_status.excel_name }}</strong></div>
+</div>
+
+<div class="grid-two">
+  <section class="panel">
+    <div class="panel-title">Configuración actual</div>
+    <div class="detail-list">
+      <div><span>Service account</span><strong>{{ config_status.service_account }}</strong></div>
+      <div><span>Folder ID</span><strong>{{ config_status.folder_id }}</strong></div>
+      <div><span>Modo</span><strong>{{ config_status.mode }}</strong></div>
+    </div>
+    <p class="muted">Modos: <strong>off</strong> desactiva Drive, <strong>excel</strong> sube solo el historial maestro, <strong>full</strong> sube historial, PDF, firmas y evidencias por registro.</p>
+  </section>
+  <section class="panel">
+    <div class="panel-title">Últimos eventos de sincronización</div>
+    <div class="timeline compact-timeline">
+      {% for item in latest_logs %}
+      <div class="timeline-item">
+        <strong>{{ item.sync_scope }} · {{ item.status }}</strong>
+        <span>{{ item.message or '-' }}</span>
+        <time>{{ item.created_at }}</time>
+      </div>
+      {% else %}
+      <p class="muted">Aún no hay eventos.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-title">Últimos registros y estado Drive</div>
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Almacén</th><th>Flujo</th><th>Sync Drive</th><th>Último sync</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+        <tr>
+          <td>#{{ record.id }}</td>
+          <td>{{ record.almacen }}</td>
+          <td><span class="badge badge-{{ record.status_badge }}">{{ record.workflow_status }}</span></td>
+          <td><span class="badge badge-{{ record.sync_badge }}">{{ record.drive_sync_status or 'pendiente' }}</span></td>
+          <td>{{ record.drive_last_sync_human }}</td>
+          <td>
+            <form method="post" action="{{ url_for('record_sync_drive', record_id=record.id) }}">
+              <button class="btn btn-sm btn-outline" type="submit">Sincronizar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted center">Sin registros todavía.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
